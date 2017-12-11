@@ -1,132 +1,112 @@
-
 # coding: utf-8
 
-# In[233]:
-
 import pandas as pd
-import re, csv, nltk, time, langid, json, itertools, os, nltk
+import re, csv, nltk, time, json, itertools, os, nltk
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
 from collections import Counter
+import gensim
+from nltk.tokenize import RegexpTokenizer
+import matplotlib
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+from scipy.cluster.hierarchy import dendrogram, linkage
 
+def train(df):
+    pass
 
-# In[143]:
+def dendogram_plot(model):
+    l = linkage(model.wv.syn0, method='complete', metric='seuclidean')
+    plt.figure(figsize=(25, 10))
+    plt.title('Hierarchical Clustering Dendrogram')
+    plt.ylabel('word')
+    plt.xlabel('distance')
 
-nltk.download('stopwords')
+    dendrogram(
+        l,
+        leaf_rotation=90.,  # rotates the x axis labels
+        leaf_font_size=16.,  # font size for the x axis labels
+        orientation='left',
+        leaf_label_func=lambda v: str(model.wv.index2word[v])
+    )
+    plt.show()
 
+def tsne_plot(model):
+    matplotlib.rcParams.update({'font.size': 11})
+    tsne = TSNE(n_components=2)
+    X = model[vocab]
+    X_tsne = tsne.fit_transform(X)
+    for i in range(len(vocab)):
+        word = words[i]
+        freq = model.wv.vocab[word].count
+        x = X_tsne[:, 0][i]
+        y = X_tsne[:, 1][i]
+        plt.scatter(x, y, s=freq/10.0, cmap='viridis')
+        plt.text(x, y, word)
+    plt.show()
 
-# In[152]:
+def is_int(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
 
-df = pd.read_json('C:/Users/Therese/Sprakt/output.json')
+df = pd.read_json('output_new.json')
 
-
-# In[153]:
-
-df2 = df.copy()
-
-
-# In[154]:
-
-df2.head()
-
-
-# In[155]:
-
-df2['description'] = df2['description'].str.replace('\W+|\d+|[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]|[\u013a\u0123\u0142\u0155\u0117\u0101\u0137\u2026]' ,' ').str.lower()
-
-
-# In[156]:
-
-df2['description'].head()
-
-
-# In[157]:
-
+import string
 stemmer = SnowballStemmer('swedish')
-stop = stopwords.words('swedish')
+stop = stopwords.words('swedish') + list(string.punctuation.encode('utf-8')) + ['gt', 'lt', 'amp', 'quot', 'align', '**', '***', '--', '//', '://', '),', ').']
 
+for i, s in enumerate(stop):
+    stop[i] = s.replace(u'\xe5', 'aa').replace(u'\xe4', 'ae').replace(u'\xf6', 'oe')
 
-# In[158]:
+result = []
+for doc in df['description']:
+    sent = []
+    for word in nltk.wordpunct_tokenize(doc.lower()):
+        if word not in stop and not is_int(word):
+            stemmed_word =  stemmer.stem(word)
+            sent.append(word)
+    result.append(sent)
 
-wordlist = filter(None, " ".join(list(set(list(itertools.chain(*df2['description'].str.split(' ')))))).split(" "))
+print df['description'].head()
 
+ngram_vectorizer = CountVectorizer(ngram_range=(1,1), stop_words = stop, min_df=0.01)
+counts = ngram_vectorizer.fit_transform(df['description'])
+word_freq = counts.toarray().sum(axis=0)
 
-# In[211]:
-
-wordlist
-
-
-# In[159]:
-
-df2['stemmed_text_data'] = [' '.join(filter(None,filter(lambda word: word not in stop, line))) for line in df2['description'].str.lower().str.split(' ')]
-
-
-# In[171]:
-
-minimum_count = 5
-str_frequencies = pd.DataFrame(list(Counter(filter(None,list(itertools.chain(*df2['stemmed_text_data'].str.split(' '))))).items()),columns=['word','count'])
-low_frequency_words = set(str_frequencies[str_frequencies['count'] < minimum_count]['word'])
-
-
-# In[187]:
-
-df2['stemmed_text_data'] = [' '.join(filter(None,filter(lambda word: word not in low_frequency_words, line))) for line in df2['stemmed_text_data'].str.split(' ')]
-df2['stemmed_text_data'] = [" ".join(stemmer.stem(word) for word in next_text.split(' '))  for next_text in df2['stemmed_text_data']]
-
-
-# In[193]:
-
-texts_stemmed = filter(None, [next_text.strip(' ').split(' ') for next_text in df2['stemmed_text_data']])
-
-
-# In[ ]:
-
-w2vmodel_stemmed = gensim.models.Word2Vec(texts_stemmed, size=100, window=5, min_count=5, workers=4)
-#w2vmodel_stemmed.save(savefolder+'w2v_stemmed_model')
-
-
-# In[188]:
-
-df2.head()
-
-
-# In[229]:
-
-v = TfidfVectorizer(stop_words = stop, min_df = 0.02, norm = 'l2')
-
-
-# In[230]:
-
-x = v.fit_transform(df2['description'])
-
-
-# In[231]:
-
-x.toarray().shape
-
-
-# In[206]:
-
-ngram_vectorizer = CountVectorizer(ngram_range=(2,2))
-
-
-# In[207]:
-
-counts = ngram_vectorizer.fit_transform(df2['description'])
-
-
-# In[208]:
-
-ngram_vectorizer.get_feature_names()
-
-
-# In[209]:
-
-counts
-
-
-# In[ ]:
+model = gensim.models.Word2Vec(result, min_count=900)
+vocab = model.wv.vocab
+words = list(vocab)
+print model
+#tsne_plot(model)
 
 
 
+"""
+print 'Computing Distances'
+
+from sklearn.metrics.pairwise import euclidean_distances
+dist = euclidean_distances(counts.toarray().T)
+vocab = ngram_vectorizer.get_feature_names()
+
+
+from sklearn.manifold import MDS
+print 'Running MDS'
+
+mds = MDS(n_components=2, dissimilarity="precomputed", random_state=1)
+pos = mds.fit_transform(dist)  # shape (n_components, n_samples)
+xs, ys = pos[:, 0], pos[:, 1]
+
+matplotlib.rcParams.update({'font.size': 9})
+print 'Plotting'
+
+for x, y, name, freq in zip(xs, ys, vocab,word_freq):
+    size = freq/10.0
+    plt.scatter(x, y, s = size)
+    plt.text(x, y, name)
+
+plt.show()
+"""
