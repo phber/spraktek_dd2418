@@ -57,3 +57,15 @@ python -m http.server 8888
 Inspired by github project by Van-thuy Phi and Taishi Ikeda
 
 
+## output_new.json
+
+Json file with all collected object listings in Sweden
+
+## sthlm_format.json
+Json file with all collected object listings in Stockholm
+
+
+
+
+
+
