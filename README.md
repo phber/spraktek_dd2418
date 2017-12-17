@@ -1,6 +1,6 @@
 # Price prediction of apartments on Hemnet using agency descriptions
 
-## Regression
+## Regression.py
 
 To run the regression, call the run function with the vocabulary file and the prediction data file in Python code:
 
