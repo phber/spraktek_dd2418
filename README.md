@@ -1,5 +1,8 @@
 # Price prediction of apartments on Hemnet using agency descriptions
 
+Project in the course DD2418 Language Engineering. All files described below can be runed seperatly. 
+
+
 ## Regression.py
 
 To run the regression, call the run function with the vocabulary file and the prediction data file in Python code:
