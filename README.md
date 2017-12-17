@@ -3,6 +3,16 @@
 Project in the course DD2418 Language Engineering. All files described below can be runed seperatly. 
 
 
+## Spider.py
+
+To retreive data from Hemnet using scrapy, use the following command in the terminal:
+
+```
+scrapy runspider spider.py -o output.json
+```
+
+The run function can use either tf-idf or Word2Vec for word embedding.
+
 ## Regression.py
 
 To run the regression, call the run function with the vocabulary file and the prediction data file in Python code:
@@ -46,6 +56,4 @@ python -m http.server 8888
 
 Inspired by github project by Van-thuy Phi and Taishi Ikeda
 
-## spyder.py
 
-Script used to collect data used in the project from the site www.hemnet.se. 
