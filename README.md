@@ -46,4 +46,6 @@ python -m http.server 8888
 
 Inspired by github project by Van-thuy Phi and Taishi Ikeda
 
+## spyder.py
 
+Script used to collect data used in the project from the site www.hemnet.se. 
